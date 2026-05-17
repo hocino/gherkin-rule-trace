@@ -222,4 +222,4 @@ Rule lines also get a colored inline decoration for quick visual scanning.
 
 This project is distributed under the MIT License.
 
-See [LICENSE](./LICENSE) for the full terms.
+See the `LICENSE` file for the full terms.
