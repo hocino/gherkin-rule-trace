@@ -77,7 +77,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       const tagComment = `// ${resolved.rule.name}`;
       await vscode.env.clipboard.writeText(tagComment);
-      vscode.window.showInformationMessage(`Rule Trace: copied "${tagComment}".`);
+      vscode.window.showInformationMessage(`Gherkin Rule Trace: copied "${tagComment}".`);
     }),
     vscode.commands.registerCommand("ruleTrace.refreshRule", async (trace?: RuleTrace) => {
       const resolved = resolveTrace(trace) ?? detailsWebview.getCurrentTrace();
@@ -108,7 +108,7 @@ async function refresh(
   return vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Window,
-      title: "Rule Trace: scanning workspace"
+      title: "Gherkin Rule Trace: scanning workspace"
     },
     async () => {
       const result = await scanner.scan();

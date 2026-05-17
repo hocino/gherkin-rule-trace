@@ -1,7 +1,7 @@
 {
-  "name": "rule-trace-viewer",
-  "displayName": "Rule Trace Viewer",
-  "description": "Visualize Gherkin Rule traceability from feature files to implementation comments and tests.",
+  "name": "gherkin-rule-trace",
+  "displayName": "Gherkin Rule Trace",
+  "description": "Trace Gherkin rules to their implementation and tests.",
   "version": "0.0.1",
   "publisher": "local",
   "license": "MIT",
@@ -28,7 +28,7 @@
       "activitybar": [
         {
           "id": "ruleTrace",
-          "title": "Rule Trace",
+          "title": "Gherkin Rule Trace",
           "icon": "resources/rule-trace.svg"
         }
       ]
@@ -37,43 +37,43 @@
       "ruleTrace": [
         {
           "id": "ruleTraceView",
-          "name": "Rule Trace"
+          "name": "Gherkin Rule Trace"
         }
       ]
     },
     "commands": [
       {
         "command": "ruleTrace.refresh",
-        "title": "Rule Trace: Refresh",
+        "title": "Gherkin Rule Trace: Refresh",
         "icon": "$(refresh)"
       },
       {
         "command": "ruleTrace.openRuleDetails",
-        "title": "Rule Trace: Open Rule Details"
+        "title": "Gherkin Rule Trace: Open Rule Details"
       },
       {
         "command": "ruleTrace.openImplementation",
-        "title": "Rule Trace: Open Implementation"
+        "title": "Gherkin Rule Trace: Open Implementation"
       },
       {
         "command": "ruleTrace.openTest",
-        "title": "Rule Trace: Open Test"
+        "title": "Gherkin Rule Trace: Open Test"
       },
       {
         "command": "ruleTrace.generateMissingSteps",
-        "title": "Rule Trace: Generate Missing Steps"
+        "title": "Gherkin Rule Trace: Generate Missing Steps"
       },
       {
         "command": "ruleTrace.copyRuleTag",
-        "title": "Rule Trace: Copy Rule Tag"
+        "title": "Gherkin Rule Trace: Copy Rule Tag"
       },
       {
         "command": "ruleTrace.refreshRule",
-        "title": "Rule Trace: Refresh Rule"
+        "title": "Gherkin Rule Trace: Refresh Rule"
       }
     ],
     "configuration": {
-      "title": "Rule Trace",
+      "title": "Gherkin Rule Trace",
       "properties": {
         "ruleTrace.include": {
           "type": "array",

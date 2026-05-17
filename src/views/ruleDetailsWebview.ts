@@ -17,7 +17,7 @@ export class RuleDetailsWebview {
     if (!this.panel) {
       this.panel = vscode.window.createWebviewPanel(
         "ruleTraceDetails",
-        "Rule Trace Details",
+        "Gherkin Rule Trace Details",
         vscode.ViewColumn.Beside,
         {
           enableScripts: true,
@@ -45,7 +45,7 @@ export class RuleDetailsWebview {
 
     if (message.command === "copy" && typeof message.text === "string") {
       await vscode.env.clipboard.writeText(message.text);
-      vscode.window.showInformationMessage("Rule Trace: copied to clipboard.");
+      vscode.window.showInformationMessage("Gherkin Rule Trace: copied to clipboard.");
       return;
     }
 

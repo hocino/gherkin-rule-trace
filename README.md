@@ -1,6 +1,6 @@
-# Rule Trace Viewer
+# Gherkin Rule Trace
 
-Rule Trace Viewer is a small VS Code extension that scans Gherkin/Cucumber `.feature` files and shows each Gherkin rule with its implementation and test status.
+Gherkin Rule Trace is a small VS Code extension that scans Gherkin/Cucumber `.feature` files and shows each Gherkin rule with its implementation and test status.
 
 The MVP intentionally does not use `@rule`, `@rule_id`, or any tag convention. A rule is identified only by the exact text after `Rule:`.
 
@@ -45,13 +45,13 @@ Then install it in VS Code:
 2. Go to the Extensions view.
 3. Click the `...` menu.
 4. Choose `Install from VSIX...`.
-5. Select the generated `rule-trace-viewer-0.0.1.vsix`.
+5. Select the generated `gherkin-rule-trace-0.0.1.vsix`.
 6. Reload VS Code if prompted.
 
 You can also install it from the command line:
 
 ```bash
-code --install-extension rule-trace-viewer-0.0.1.vsix
+code --install-extension gherkin-rule-trace-0.0.1.vsix
 ```
 
 ### Option 2: run without installing
@@ -65,7 +65,7 @@ npm run compile
 
 Then press `F5` in VS Code. This opens an Extension Development Host with the extension loaded.
 
-After installation or launch, open a workspace containing `.feature` files and use the `Rule Trace` Activity Bar view.
+After installation or launch, open a workspace containing `.feature` files and use the `Gherkin Rule Trace` Activity Bar view.
 
 ## What the extension scans
 
@@ -174,7 +174,7 @@ Python decorators and C# SpecFlow/Reqnroll attributes are also detected for the 
 
 ## Sidebar
 
-Open the `Rule Trace` Activity Bar view. It displays `.feature` files grouped by directory, then lists their rules without adding a `Rule:` prefix.
+Open the `Gherkin Rule Trace` Activity Bar view. It displays `.feature` files grouped by directory, then lists their rules without adding a `Rule:` prefix.
 
 Statuses:
 
@@ -188,13 +188,13 @@ The details panel contains clickable file links, buttons to copy the exact rule 
 
 ## Commands
 
-- `Rule Trace: Refresh`
-- `Rule Trace: Refresh Rule`
-- `Rule Trace: Open Rule Details`
-- `Rule Trace: Open Implementation`
-- `Rule Trace: Open Test`
-- `Rule Trace: Copy Rule Tag`
-- `Rule Trace: Generate Missing Steps`
+- `Gherkin Rule Trace: Refresh`
+- `Gherkin Rule Trace: Refresh Rule`
+- `Gherkin Rule Trace: Open Rule Details`
+- `Gherkin Rule Trace: Open Implementation`
+- `Gherkin Rule Trace: Open Test`
+- `Gherkin Rule Trace: Copy Rule Tag`
+- `Gherkin Rule Trace: Generate Missing Steps`
 
 ## CodeLens
 

@@ -55,7 +55,7 @@ async function resolveTargetStepFile(trace: RuleTrace): Promise<vscode.Uri | und
 
   const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(trace.rule.featureFile));
   if (!workspaceFolder) {
-    vscode.window.showWarningMessage("Rule Trace: cannot generate steps outside a workspace folder.");
+    vscode.window.showWarningMessage("Gherkin Rule Trace: cannot generate steps outside a workspace folder.");
     return undefined;
   }
 
@@ -100,7 +100,7 @@ async function ensureParentDirectory(uri: vscode.Uri): Promise<void> {
 async function openFirstExistingStep(trace: RuleTrace): Promise<void> {
   const firstStep = trace.tests.stepMatches[0];
   if (!firstStep) {
-    vscode.window.showInformationMessage("Rule Trace: no missing steps, and no step definition was found to open.");
+    vscode.window.showInformationMessage("Gherkin Rule Trace: no missing steps, and no step definition was found to open.");
     return;
   }
 

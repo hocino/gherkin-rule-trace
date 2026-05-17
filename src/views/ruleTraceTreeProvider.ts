@@ -23,7 +23,7 @@ export class RuleTraceTreeProvider implements vscode.TreeDataProvider<RuleTraceN
       item.contextValue = "rule";
       item.command = {
         command: "ruleTrace.openRuleDetails",
-        title: "Rule Trace: Open Rule Details",
+        title: "Gherkin Rule Trace: Open Rule Details",
         arguments: [element.trace]
       };
       item.description = getRuleDescription(element.trace);
