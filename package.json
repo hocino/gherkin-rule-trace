@@ -1,0 +1,168 @@
+{
+  "name": "rule-trace-viewer",
+  "displayName": "Rule Trace Viewer",
+  "description": "Visualize Gherkin Rule traceability from feature files to implementation comments and tests.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/*.feature",
+    "onView:ruleTraceView",
+    "onCommand:ruleTrace.refresh",
+    "onCommand:ruleTrace.openRuleDetails",
+    "onCommand:ruleTrace.openImplementation",
+    "onCommand:ruleTrace.openTest",
+    "onCommand:ruleTrace.generateMissingSteps",
+    "onCommand:ruleTrace.copyRuleTag",
+    "onCommand:ruleTrace.refreshRule"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ruleTrace",
+          "title": "Rule Trace",
+          "icon": "resources/rule-trace.svg"
+        }
+      ]
+    },
+    "views": {
+      "ruleTrace": [
+        {
+          "id": "ruleTraceView",
+          "name": "Rule Trace"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "ruleTrace.refresh",
+        "title": "Rule Trace: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "ruleTrace.openRuleDetails",
+        "title": "Rule Trace: Open Rule Details"
+      },
+      {
+        "command": "ruleTrace.openImplementation",
+        "title": "Rule Trace: Open Implementation"
+      },
+      {
+        "command": "ruleTrace.openTest",
+        "title": "Rule Trace: Open Test"
+      },
+      {
+        "command": "ruleTrace.generateMissingSteps",
+        "title": "Rule Trace: Generate Missing Steps"
+      },
+      {
+        "command": "ruleTrace.copyRuleTag",
+        "title": "Rule Trace: Copy Rule Tag"
+      },
+      {
+        "command": "ruleTrace.refreshRule",
+        "title": "Rule Trace: Refresh Rule"
+      }
+    ],
+    "configuration": {
+      "title": "Rule Trace",
+      "properties": {
+        "ruleTrace.include": {
+          "type": "array",
+          "default": [
+            "**/*.feature"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob patterns for feature files to scan."
+        },
+        "ruleTrace.exclude": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/out/**",
+            "**/.git/**"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob patterns excluded from feature and code scans."
+        },
+        "ruleTrace.codeExtensions": {
+          "type": "array",
+          "default": [
+            ".ts",
+            ".tsx",
+            ".js",
+            ".jsx",
+            ".mts",
+            ".cts",
+            ".py",
+            ".cs",
+            ".java",
+            ".go",
+            ".rs",
+            ".php",
+            ".rb"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Code file extensions used for implementation and test scans."
+        }
+      }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "ruleTrace.refresh",
+          "when": "view == ruleTraceView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "ruleTrace.openRuleDetails",
+          "when": "view == ruleTraceView && viewItem == rule",
+          "group": "inline"
+        },
+        {
+          "command": "ruleTrace.openImplementation",
+          "when": "view == ruleTraceView && viewItem == rule",
+          "group": "inline"
+        },
+        {
+          "command": "ruleTrace.openTest",
+          "when": "view == ruleTraceView && viewItem == rule",
+          "group": "inline"
+        },
+        {
+          "command": "ruleTrace.generateMissingSteps",
+          "when": "view == ruleTraceView && viewItem == rule",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.8",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.5"
+  }
+}
