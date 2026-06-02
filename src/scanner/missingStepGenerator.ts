@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { FeatureRule, GherkinStepInfo, RuleTrace } from "../model/types";
+import { openFileAtLine } from "../navigation/openFile";
 
 export async function generateMissingSteps(trace: RuleTrace): Promise<void> {
   if (trace.tests.missingSteps.length === 0) {
@@ -27,7 +28,7 @@ export async function generateMissingSteps(trace: RuleTrace): Promise<void> {
   const firstStepToken = `${gherkinStep?.keyword ?? "Given"}(${JSON.stringify(firstGeneratedStep)}`;
   const firstStepIndex = nextContent.indexOf(firstStepToken, insertionStart);
   const targetLine = firstStepIndex >= 0 ? getLineNumber(nextContent, firstStepIndex) : getLineNumber(nextContent, insertionStart);
-  await openFileAtLine(targetUri, targetLine);
+  await openFileAtLine(targetUri.fsPath, targetLine);
 }
 
 async function resolveTargetStepFile(trace: RuleTrace): Promise<vscode.Uri | undefined> {
@@ -104,15 +105,7 @@ async function openFirstExistingStep(trace: RuleTrace): Promise<void> {
     return;
   }
 
-  await openFileAtLine(vscode.Uri.file(firstStep.file), firstStep.line);
-}
-
-async function openFileAtLine(uri: vscode.Uri, line: number): Promise<void> {
-  const document = await vscode.workspace.openTextDocument(uri);
-  const editor = await vscode.window.showTextDocument(document, { preview: false });
-  const position = new vscode.Position(Math.max(line - 1, 0), 0);
-  editor.selection = new vscode.Selection(position, position);
-  editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+  await openFileAtLine(firstStep.file, firstStep.line);
 }
 
 function getLineNumber(content: string, index: number): number {

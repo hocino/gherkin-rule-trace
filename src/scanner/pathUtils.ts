@@ -38,3 +38,40 @@ export function isTestFile(filePath: string): boolean {
 export function pathDepth(relativePath: string): number {
   return normalizeFsPath(relativePath).split("/").filter(Boolean).length;
 }
+
+export function matchesAnyGlob(filePath: string, patterns: string[]): boolean {
+  const normalized = normalizeFsPath(filePath).toLowerCase();
+  return patterns.some((pattern) => globToRegex(normalizeFsPath(pattern).toLowerCase()).test(normalized));
+}
+
+function globToRegex(pattern: string): RegExp {
+  let source = "";
+  for (let index = 0; index < pattern.length; index += 1) {
+    const char = pattern[index];
+    const next = pattern[index + 1];
+
+    if (char === "*" && next === "*") {
+      source += ".*";
+      index += 1;
+      continue;
+    }
+
+    if (char === "*") {
+      source += "[^/]*";
+      continue;
+    }
+
+    if (char === "?") {
+      source += "[^/]";
+      continue;
+    }
+
+    source += escapeRegex(char);
+  }
+
+  return new RegExp(`^${source}$`);
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
+}

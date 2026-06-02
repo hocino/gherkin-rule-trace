@@ -2,4 +2,3 @@
 export function validateCertificate(expiresAt: Date): boolean {
   return expiresAt.getTime() > Date.now();
 }
-// #011 A subcontractor must provide required documents

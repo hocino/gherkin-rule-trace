@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as vscode from "vscode";
+import { summarizeImplementations } from "../model/implementationSummary";
 import { RuleTrace, RuleTraceNode, WorkspaceScanResult } from "../model/types";
 import { getWorkspaceFolderLabel, getWorkspaceRelativePath, normalizeFsPath } from "../scanner/pathUtils";
 
@@ -22,8 +23,8 @@ export class RuleTraceTreeProvider implements vscode.TreeDataProvider<RuleTraceN
     if (element.kind === "rule" && element.trace) {
       item.contextValue = "rule";
       item.command = {
-        command: "ruleTrace.openRuleDetails",
-        title: "Gherkin Rule Trace: Open Rule Details",
+        command: "ruleTrace.openRuleFeature",
+        title: "Gherkin Rule Trace: Open Rule Feature",
         arguments: [element.trace]
       };
       item.description = getRuleDescription(element.trace);
@@ -129,22 +130,26 @@ function getRuleStatusPrefix(trace: RuleTrace): string {
 }
 
 function getRuleDescription(trace: RuleTrace): string {
+  const summary = summarizeImplementations(trace);
   if (trace.implementations.length > 0 && trace.tests.tested) {
-    return "implemented, tested";
+    return `Back ${summary.backend}, Front ${summary.frontend}, tested`;
   }
 
   if (trace.implementations.length > 0) {
-    return "implemented, not tested";
+    return `Back ${summary.backend}, Front ${summary.frontend}, not tested`;
   }
 
   return "not implemented";
 }
 
 function getRuleTooltip(trace: RuleTrace): string {
+  const summary = summarizeImplementations(trace);
   return [
     trace.rule.name,
     `Feature: ${path.basename(trace.rule.featureFile)}:${trace.rule.line}`,
-    `Implementations: ${trace.implementations.length}`,
+    `Backend implementations: ${summary.backend}`,
+    `Frontend implementations: ${summary.frontend}`,
+    `Other implementations: ${summary.unknown}`,
     `Tested: ${trace.tests.tested ? "yes" : "no"}`
   ].join("\n");
 }

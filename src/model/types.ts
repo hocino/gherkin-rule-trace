@@ -23,10 +23,13 @@ export interface FeatureRule {
   gherkinSteps: GherkinStepInfo[];
 }
 
+export type ImplementationLayer = "backend" | "frontend" | "unknown";
+
 export interface RuleImplementationMatch {
   file: string;
   line: number;
   preview: string;
+  layer: ImplementationLayer;
 }
 
 export interface RuleTestMatch {
@@ -46,6 +49,16 @@ export interface RuleTrace {
 export interface WorkspaceScanResult {
   rules: RuleTrace[];
   scannedAt: Date;
+  stats?: {
+    mode: "full" | "incremental";
+    durationMs: number;
+    featureFiles: number;
+    codeFiles: number;
+    rules: number;
+    changedFiles: number;
+    cacheHits: number;
+    cacheMisses: number;
+  };
 }
 
 export interface RuleTraceNode {

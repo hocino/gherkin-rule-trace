@@ -20,10 +20,33 @@
     "onCommand:ruleTrace.openTest",
     "onCommand:ruleTrace.generateMissingSteps",
     "onCommand:ruleTrace.copyRuleTag",
-    "onCommand:ruleTrace.refreshRule"
+    "onCommand:ruleTrace.refreshRule",
+    "onCommand:ruleTrace.openRuleFeature"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "feature",
+        "aliases": [
+          "Gherkin",
+          "gherkin",
+          "Feature",
+          "feature"
+        ],
+        "extensions": [
+          ".feature"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "feature",
+        "scopeName": "source.gherkin",
+        "path": "./syntaxes/gherkin.tmLanguage.json"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -50,6 +73,10 @@
       {
         "command": "ruleTrace.openRuleDetails",
         "title": "Gherkin Rule Trace: Open Rule Details"
+      },
+      {
+        "command": "ruleTrace.openRuleFeature",
+        "title": "Gherkin Rule Trace: Open Rule Feature"
       },
       {
         "command": "ruleTrace.openImplementation",
@@ -120,6 +147,55 @@
             "type": "string"
           },
           "description": "Code file extensions used for implementation and test scans."
+        },
+        "ruleTrace.frontendPatterns": {
+          "type": "array",
+          "default": [
+            "**/frontend/**",
+            "**/front/**",
+            "**/web/**",
+            "**/client/**",
+            "**/ui/**",
+            "**/components/**",
+            "**/*.tsx",
+            "**/*.jsx"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob-like path patterns used to classify implementation matches as frontend."
+        },
+        "ruleTrace.backendPatterns": {
+          "type": "array",
+          "default": [
+            "**/backend/**",
+            "**/back/**",
+            "**/server/**",
+            "**/api/**",
+            "**/domain/**",
+            "**/application/**",
+            "**/infrastructure/**",
+            "**/*.cs",
+            "**/*.java",
+            "**/*.go",
+            "**/*.rs",
+            "**/*.py"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob-like path patterns used to classify implementation matches as backend."
+        },
+        "ruleTrace.autoScan": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically update the trace index when feature, source, or test files change."
+        },
+        "ruleTrace.maxFileSizeKb": {
+          "type": "number",
+          "default": 1024,
+          "minimum": 1,
+          "description": "Maximum file size in KB scanned by Gherkin Rule Trace. Larger files are skipped."
         }
       }
     },
@@ -135,22 +211,22 @@
         {
           "command": "ruleTrace.openRuleDetails",
           "when": "view == ruleTraceView && viewItem == rule",
-          "group": "inline"
+          "group": "navigation"
         },
         {
           "command": "ruleTrace.openImplementation",
           "when": "view == ruleTraceView && viewItem == rule",
-          "group": "inline"
+          "group": "navigation"
         },
         {
           "command": "ruleTrace.openTest",
           "when": "view == ruleTraceView && viewItem == rule",
-          "group": "inline"
+          "group": "navigation"
         },
         {
           "command": "ruleTrace.generateMissingSteps",
           "when": "view == ruleTraceView && viewItem == rule",
-          "group": "inline"
+          "group": "navigation"
         }
       ]
     }

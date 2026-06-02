@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { summarizeImplementations } from "../model/implementationSummary";
 import { FeatureRule, RuleTrace, WorkspaceScanResult } from "../model/types";
 import { parseFeatureFile } from "../scanner/featureParser";
 
@@ -24,8 +25,8 @@ export class RuleCodeLensProvider implements vscode.CodeLensProvider {
     return rules.flatMap((rule) => {
       const trace = this.traces.get(rule.id);
       const resolvedTrace = trace ?? createFallbackTrace(rule);
-      const implementations = trace?.implementations.length ?? 0;
-      const implementedIcon = implementations > 0 ? "$(check)" : "$(error)";
+      const implementationSummary = summarizeImplementations(resolvedTrace);
+      const implementedIcon = implementationSummary.total > 0 ? "$(check)" : "$(error)";
       const testedIcon = trace?.tests.tested ? "$(check)" : "$(error)";
       const tested = trace?.tests.tested ? "Yes" : "No";
       const range = new vscode.Range(rule.line - 1, 0, rule.line - 1, 0);
@@ -36,7 +37,7 @@ export class RuleCodeLensProvider implements vscode.CodeLensProvider {
       return [
         new vscode.CodeLens(range, {
           command: "ruleTrace.openRuleDetails",
-          title: `${implementedIcon} Implemented: ${implementations} | ${testedIcon} Tested: ${tested}`,
+          title: `${implementedIcon} Back: ${implementationSummary.backend} | Front: ${implementationSummary.frontend} | ${testedIcon} Tested: ${tested}`,
           arguments: [resolvedTrace]
         }),
         new vscode.CodeLens(range, {

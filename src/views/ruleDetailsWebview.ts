@@ -1,5 +1,8 @@
 import * as vscode from "vscode";
+import { summarizeImplementations } from "../model/implementationSummary";
+import { ImplementationLayer } from "../model/types";
 import { RuleTrace } from "../model/types";
+import { openFileAtLine } from "../navigation/openFile";
 import { getWorkspaceRelativePath } from "../scanner/pathUtils";
 
 export class RuleDetailsWebview {
@@ -64,19 +67,8 @@ export class RuleDetailsWebview {
     const ruleComment = `// ${trace.rule.name}`;
     const stepButtonLabel = trace.tests.missingSteps.length > 0 ? "Generate missing steps" : "Open first step";
     const featureLink = renderFileButton(trace.rule.featureFile, trace.rule.line);
-    const implementationItems =
-      trace.implementations.length > 0
-        ? trace.implementations
-            .map(
-              (match) => `
-                <li>
-                  <span class="ok">✓</span>
-                  ${renderFileButton(match.file, match.line)}
-                  <div class="preview">Preview: ${escapeHtml(match.preview)}</div>
-                </li>`
-            )
-            .join("")
-        : `<li><span class="bad">✕</span> No implementation found</li>`;
+    const implementationSummary = summarizeImplementations(trace);
+    const implementationItems = renderImplementationSection(trace);
 
     const testSummary =
       trace.tests.tested && trace.tests.reason === "describe"
@@ -215,7 +207,13 @@ export class RuleDetailsWebview {
         <h1>${escapeHtml(trace.rule.name)}</h1>
         <div class="status-row">
           <span class="pill ${trace.implementations.length > 0 ? "ok" : "bad"}">
-            ${trace.implementations.length > 0 ? "✓" : "✕"} Implemented: ${trace.implementations.length}
+            ${trace.implementations.length > 0 ? "✓" : "✕"} Back: ${implementationSummary.backend}
+          </span>
+          <span class="pill ${trace.implementations.length > 0 ? "ok" : "bad"}">
+            ${trace.implementations.length > 0 ? "✓" : "✕"} Front: ${implementationSummary.frontend}
+          </span>
+          <span class="pill ${implementationSummary.unknown > 0 ? "warn" : "ok"}">
+            Other: ${implementationSummary.unknown}
           </span>
           <span class="pill ${trace.tests.tested ? "ok" : "bad"}">
             ${trace.tests.tested ? "✓" : "✕"} Tested: ${trace.tests.tested ? "Yes" : "No"}
@@ -223,7 +221,6 @@ export class RuleDetailsWebview {
         </div>
         <div class="actions">
           <button data-command="copy" data-text="${escapeAttribute(ruleComment)}">Copy rule tag</button>
-          <button data-command="copy" data-text="${escapeAttribute(ruleComment)}">Copy implementation comment</button>
           <button data-command="generateMissingSteps">${escapeHtml(stepButtonLabel)}</button>
           <button data-command="refreshRule">Refresh</button>
         </div>
@@ -267,12 +264,36 @@ export class RuleDetailsWebview {
   }
 }
 
-async function openFileAtLine(file: string, line: number): Promise<void> {
-  const document = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
-  const editor = await vscode.window.showTextDocument(document, { preview: false });
-  const position = new vscode.Position(Math.max(line - 1, 0), 0);
-  editor.selection = new vscode.Selection(position, position);
-  editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+function renderImplementationSection(trace: RuleTrace): string {
+  if (trace.implementations.length === 0) {
+    return `<ul><li><span class="bad">✕</span> No implementation found</li></ul>`;
+  }
+
+  return [
+    renderImplementationGroup("Backend", "backend", trace),
+    renderImplementationGroup("Frontend", "frontend", trace),
+    renderImplementationGroup("Other", "unknown", trace)
+  ].join("");
+}
+
+function renderImplementationGroup(title: string, layer: ImplementationLayer, trace: RuleTrace): string {
+  const matches = trace.implementations.filter((match) => match.layer === layer);
+  if (matches.length === 0) {
+    return "";
+  }
+
+  const items = matches
+    .map(
+      (match) => `
+        <li>
+          <span class="ok">✓</span>
+          ${renderFileButton(match.file, match.line)}
+          <div class="preview">Preview: ${escapeHtml(match.preview)}</div>
+        </li>`
+    )
+    .join("");
+
+  return `<h3>${escapeHtml(title)}</h3><ul>${items}</ul>`;
 }
 
 function renderFileButton(file: string, line: number): string {

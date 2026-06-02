@@ -1,4 +1,4 @@
-import { validateCertificate } from "../../src/compliance/validateCertificate";
+import { validateCertificate } from "../../src/domain/compliance/validateCertificate";
 
 describe("#010 A vigilance certificate must be valid", () => {
   it("rejects expired certificates", () => {

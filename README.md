@@ -107,6 +107,42 @@ Code extensions scanned for implementation and tests:
 ]
 ```
 
+Scan behavior can also be tuned:
+
+```json
+"ruleTrace.autoScan": true,
+"ruleTrace.maxFileSizeKb": 1024
+```
+
+Implementation matches are classified as backend or frontend with configurable path patterns:
+
+```json
+"ruleTrace.backendPatterns": [
+  "**/backend/**",
+  "**/server/**",
+  "**/api/**",
+  "**/domain/**",
+  "**/application/**",
+  "**/infrastructure/**",
+  "**/*.cs",
+  "**/*.java",
+  "**/*.go",
+  "**/*.rs",
+  "**/*.py"
+],
+"ruleTrace.frontendPatterns": [
+  "**/frontend/**",
+  "**/web/**",
+  "**/client/**",
+  "**/ui/**",
+  "**/components/**",
+  "**/*.tsx",
+  "**/*.jsx"
+]
+```
+
+Files that do not match either set are shown as `Other` in the rule details.
+
 ## Implementation convention
 
 A rule is considered implemented when a non-test source file contains a comment with the exact rule name.
@@ -201,7 +237,7 @@ The details panel contains clickable file links, buttons to copy the exact rule 
 Each `Rule:` line in a `.feature` file gets a CodeLens:
 
 ```text
-✓ Implemented: 1 | ✓ Tested: Yes | Copy tag | Open first step | Refresh rule
+✓ Back: 1 | Front: 1 | ✓ Tested: Yes | Copy tag | Open first step | Refresh rule
 Rule: #010 A vigilance certificate must be valid
 ```
 
@@ -209,13 +245,40 @@ The status opens rule details. `Copy tag` copies `// ` followed by the exact tex
 
 Rule lines also get a colored inline decoration for quick visual scanning.
 
+## Syntax highlighting
+
+The extension contributes a lightweight Gherkin language definition for `.feature` files, including syntax highlighting for:
+
+- `Feature:`, `Rule:`, `Background:`, `Scenario:`, `Scenario Outline:`, and `Examples:`;
+- steps: `Given`, `When`, `Then`, `And`, `But`;
+- tags such as `@smoke`;
+- comments;
+- docstrings;
+- examples/data tables;
+- scenario outline placeholders such as `<supplierId>`.
+
+## Performance
+
+The scanner is optimized for larger workspaces:
+
+- the first scan builds an in-memory trace index;
+- file watchers update the index incrementally when a `.feature`, source, or test file changes;
+- saving one code/test file rescans that file only;
+- saving one `.feature` file reparses that file and rebuilds rule-name matches from cached source/test files;
+- watcher events are debounced to avoid duplicate rescans during save bursts;
+- file contents are cached by `mtime` and `size` between refreshes;
+- feature and code files are read with bounded concurrency;
+- implementation matching scans each code file once and uses a rule-name search index instead of checking every rule against every line;
+- test matching extracts `describe(...)` and step definitions once per test file, then uses direct lookups for rule names and steps.
+
 ## MVP limits
 
 - Parsing is regex and line based.
 - It does not evaluate Gherkin backgrounds, scenario outlines, examples, or localized Gherkin keywords.
 - Rule-name matching is case-sensitive.
 - Step matching is exact after trimming the Gherkin keyword.
-- A full workspace scan is performed on refresh.
+- Manual refresh performs a full workspace discovery, but unchanged files are reused from cache.
+- Automatic updates from file changes are incremental.
 - Implementation detection only checks comments that contain the exact rule name.
 
 ## License

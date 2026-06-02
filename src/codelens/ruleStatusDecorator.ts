@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { summarizeImplementations } from "../model/implementationSummary";
 import { RuleTrace, WorkspaceScanResult } from "../model/types";
 
 export class RuleStatusDecorator implements vscode.Disposable {
@@ -65,7 +66,8 @@ export class RuleStatusDecorator implements vscode.Disposable {
     const traces = this.tracesByFile.get(editor.document.uri.fsPath) ?? [];
 
     for (const trace of traces) {
-      const implemented = trace.implementations.length > 0;
+      const implementationSummary = summarizeImplementations(trace);
+      const implemented = implementationSummary.total > 0;
       const tested = trace.tests.tested;
       const line = Math.max(trace.rule.line - 1, 0);
       if (line >= editor.document.lineCount) {
@@ -78,7 +80,7 @@ export class RuleStatusDecorator implements vscode.Disposable {
         range,
         renderOptions: {
           after: {
-            contentText: `  ${implemented ? "✓" : "✕"} Implemented: ${trace.implementations.length} | ${tested ? "✓" : "✕"} Tested: ${tested ? "Yes" : "No"}`
+            contentText: `  ${implemented ? "✓" : "✕"} Back: ${implementationSummary.backend} | Front: ${implementationSummary.frontend} | ${tested ? "✓" : "✕"} Tested: ${tested ? "Yes" : "No"}`
           }
         }
       };

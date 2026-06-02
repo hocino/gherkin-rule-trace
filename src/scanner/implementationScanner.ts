@@ -1,4 +1,9 @@
 import { FeatureRule, RuleImplementationMatch } from "../model/types";
+import { createRuleSearchIndex, RuleSearchIndex } from "./ruleSearchIndex";
+
+export interface IndexedImplementationMatch extends RuleImplementationMatch {
+  ruleId: string;
+}
 
 export function findImplementationMatches(
   rules: FeatureRule[],
@@ -10,18 +15,47 @@ export function findImplementationMatches(
     matches.set(rule.id, []);
   }
 
+  const ruleIndex = createRuleSearchIndex(rules);
+
   for (const file of files) {
-    const lines = file.content.split(/\r?\n/);
-    for (const rule of rules) {
-      for (let index = 0; index < lines.length; index += 1) {
-        const line = lines[index];
-        if (line.includes(rule.name) && looksLikeCommentLine(line, file.content, index)) {
-          matches.get(rule.id)?.push({
-            file: file.file,
-            line: index + 1,
-            preview: line.trim()
-          });
-        }
+    for (const match of scanImplementationFile(file, ruleIndex)) {
+        matches.get(match.ruleId)?.push({
+          file: match.file,
+          line: match.line,
+          preview: match.preview,
+          layer: match.layer
+        });
+    }
+  }
+
+  return matches;
+}
+
+export function scanImplementationFile(
+  file: { file: string; content: string },
+  ruleIndex: RuleSearchIndex
+): IndexedImplementationMatch[] {
+  const matches: IndexedImplementationMatch[] = [];
+  const lines = file.content.split(/\r?\n/);
+  let inBlockComment = false;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const commentLine = looksLikeCommentLine(line, inBlockComment);
+    inBlockComment = updateBlockCommentState(line, inBlockComment);
+
+    if (!commentLine) {
+      continue;
+    }
+
+    for (const rule of ruleIndex.candidatesForText(line)) {
+      if (line.includes(rule.name)) {
+        matches.push({
+          ruleId: rule.id,
+          file: file.file,
+          line: index + 1,
+          preview: line.trim(),
+          layer: "unknown"
+        });
       }
     }
   }
@@ -29,8 +63,12 @@ export function findImplementationMatches(
   return matches;
 }
 
-function looksLikeCommentLine(line: string, content: string, lineIndex: number): boolean {
+function looksLikeCommentLine(line: string, inBlockComment: boolean): boolean {
   const trimmed = line.trim();
+  if (inBlockComment) {
+    return true;
+  }
+
   if (
     trimmed.startsWith("//") ||
     trimmed.startsWith("#") ||
@@ -45,8 +83,16 @@ function looksLikeCommentLine(line: string, content: string, lineIndex: number):
     return true;
   }
 
-  const beforeLine = content.split(/\r?\n/).slice(0, lineIndex + 1).join("\n");
-  const openBlock = beforeLine.lastIndexOf("/*");
-  const closeBlock = beforeLine.lastIndexOf("*/");
-  return openBlock > closeBlock;
+  return false;
+}
+
+function updateBlockCommentState(line: string, inBlockComment: boolean): boolean {
+  const blockStart = line.indexOf("/*");
+  const blockEnd = line.indexOf("*/");
+
+  if (inBlockComment) {
+    return blockEnd === -1;
+  }
+
+  return blockStart !== -1 && (blockEnd === -1 || blockStart < blockEnd);
 }
