@@ -136,6 +136,7 @@ Scan behavior can also be tuned:
 "ruleTrace.autoScan": true,
 "ruleTrace.maxFileSizeKb": 1024,
 "ruleTrace.openCsFilesInVisualStudio": true,
+"ruleTrace.showFeatureInlineStatus": false,
 "ruleTrace.stepGenerationLanguage": "auto"
 ```
 
@@ -314,7 +315,11 @@ In `auto` mode, the extension uses an existing step definition file when one is 
 - C# SpecFlow/Reqnroll steps with `[Given(...)]`, `[When(...)]`, `[Then(...)]`;
 - Python Behave-style steps with `@given(...)`, `@when(...)`, `@then(...)`.
 
-Rule lines also get a colored inline decoration for quick visual scanning.
+Rule status is shown through CodeLens above each `Rule:` line. Inline status decorations are disabled by default to keep the minimap readable and close to the standard VS Code experience for `.cs` and `.ts` files. They can be enabled with:
+
+```json
+"ruleTrace.showFeatureInlineStatus": true
+```
 
 ## Syntax highlighting
 

@@ -113,7 +113,7 @@
               "name": "punctuation.separator.key-value.gherkin"
             },
             "3": {
-              "name": "entity.name.section.gherkin"
+              "name": "string.unquoted.background.gherkin"
             }
           }
         }
@@ -132,7 +132,7 @@
               "name": "punctuation.separator.key-value.gherkin"
             },
             "3": {
-              "name": "entity.name.section.gherkin"
+              "name": "string.unquoted.scenario.gherkin"
             }
           }
         }

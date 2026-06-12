@@ -29,7 +29,12 @@ export class RuleStatusDecorator implements vscode.Disposable {
   constructor(private readonly context: vscode.ExtensionContext) {
     this.context.subscriptions.push(
       vscode.window.onDidChangeVisibleTextEditors(() => this.refreshVisibleEditors()),
-      vscode.workspace.onDidCloseTextDocument(() => this.refreshVisibleEditors())
+      vscode.workspace.onDidCloseTextDocument(() => this.refreshVisibleEditors()),
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration("ruleTrace.showFeatureInlineStatus")) {
+          this.refreshVisibleEditors();
+        }
+      })
     );
   }
 
@@ -63,6 +68,14 @@ export class RuleStatusDecorator implements vscode.Disposable {
     const ok: vscode.DecorationOptions[] = [];
     const warn: vscode.DecorationOptions[] = [];
     const bad: vscode.DecorationOptions[] = [];
+    const enabled = vscode.workspace.getConfiguration("ruleTrace").get<boolean>("showFeatureInlineStatus", false);
+    if (!enabled) {
+      editor.setDecorations(this.okDecoration, ok);
+      editor.setDecorations(this.warnDecoration, warn);
+      editor.setDecorations(this.badDecoration, bad);
+      return;
+    }
+
     const traces = this.tracesByFile.get(editor.document.uri.fsPath) ?? [];
 
     for (const trace of traces) {

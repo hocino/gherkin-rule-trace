@@ -71,15 +71,21 @@ async function tryOpenCsFileInVisualStudio(file: string, line: number): Promise<
   }
 
   try {
-    await execFile(devenvPath, ["/edit", file], { windowsHide: true });
-    if (line > 0) {
-      setTimeout(() => {
-        execFile(devenvPath, ["/command", `Edit.GoTo ${line}`], { windowsHide: true }).catch(() => undefined);
-      }, 250);
-    }
+    await openVisualStudioFileAtLine(devenvPath, file, line);
     return true;
   } catch {
     return false;
+  }
+}
+
+async function openVisualStudioFileAtLine(devenvPath: string, file: string, line: number): Promise<void> {
+  const targetLine = Math.max(line, 1);
+  await execFile(devenvPath, ["/edit", file, "/command", `Edit.GoTo ${targetLine}`], { windowsHide: true });
+
+  for (const delay of [300, 800, 1500]) {
+    setTimeout(() => {
+      execFile(devenvPath, ["/edit", file, "/command", `Edit.GoTo ${targetLine}`], { windowsHide: true }).catch(() => undefined);
+    }, delay);
   }
 }
 

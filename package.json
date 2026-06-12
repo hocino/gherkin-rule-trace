@@ -231,6 +231,11 @@
           "default": true,
           "description": "Open .cs implementation/test links in an already running Visual Studio instance when possible. Falls back to VS Code."
         },
+        "ruleTrace.showFeatureInlineStatus": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show inline Back/Front/Tested status next to Rule lines in .feature files. Disabled by default to keep the minimap readable."
+        },
         "ruleTrace.stepGenerationLanguage": {
           "type": "string",
           "default": "auto",
