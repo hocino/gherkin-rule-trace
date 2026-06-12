@@ -8,7 +8,6 @@ build/
 
 # VS Code test/runtime artifacts
 .vscode-test/
-*.vsix
 
 # Logs
 npm-debug.log*
