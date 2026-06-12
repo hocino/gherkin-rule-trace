@@ -1,9 +1,11 @@
 import * as childProcess from "child_process";
+import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
 import * as vscode from "vscode";
 
 const execFile = promisify(childProcess.execFile);
+const access = promisify(fs.access);
 
 export async function openFileAtLine(file: string, line: number): Promise<void> {
   if (await tryOpenCsFileInVisualStudio(file, line)) {
@@ -60,8 +62,11 @@ async function tryOpenCsFileInVisualStudio(file: string, line: number): Promise<
     return false;
   }
 
-  const devenvPath = await resolveVisualStudioExecutable(config.get<string>("visualStudioPath", ""));
+  const devenvPath = await resolveVisualStudioExecutable();
   if (!devenvPath) {
+    vscode.window.showWarningMessage(
+      "Gherkin Rule Trace: Visual Studio is running, but devenv.exe was not found. Add the Visual Studio IDE folder to your user PATH and restart VS Code."
+    );
     return false;
   }
 
@@ -85,32 +90,102 @@ async function isVisualStudioRunning(): Promise<boolean> {
     return (
       processList.includes("devenv.exe") ||
       processList.includes("devhub") ||
-      processList.includes("visualstudio")
+      processList.includes("visualstudio") ||
+      processList.includes("servicehub")
     );
   } catch {
     return false;
   }
 }
 
-async function resolveVisualStudioExecutable(configuredPath: string): Promise<string | undefined> {
-  if (configuredPath.trim()) {
-    return configuredPath.trim();
+async function resolveVisualStudioExecutable(): Promise<string | undefined> {
+  const vswherePath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
+  if (await fileExists(vswherePath)) {
+    try {
+      const { stdout } = await execFile(
+        vswherePath,
+        ["-latest", "-products", "*", "-requires", "Microsoft.Component.MSBuild", "-find", "Common7\\IDE\\devenv.exe"],
+        { windowsHide: true }
+      );
+      const detectedPath = stdout.split(/\r?\n/).find((line) => line.trim().length > 0)?.trim();
+      if (detectedPath && await fileExists(detectedPath)) {
+        return detectedPath;
+      }
+    } catch {
+      // Fall back to less restrictive vswhere and known locations below.
+    }
   }
 
-  const vswherePath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
+  if (await fileExists(vswherePath)) {
+    try {
+      const { stdout } = await execFile(
+        vswherePath,
+        ["-latest", "-products", "*", "-find", "Common7\\IDE\\devenv.exe"],
+        { windowsHide: true }
+      );
+      const detectedPath = stdout.split(/\r?\n/).find((line) => line.trim().length > 0)?.trim();
+      if (detectedPath && await fileExists(detectedPath)) {
+        return detectedPath;
+      }
+    } catch {
+      // Fall back to PATH and known locations below.
+    }
+  }
+
+  const pathResolved = await resolveFromPath();
+  if (pathResolved) {
+    return pathResolved;
+  }
+
+  for (const candidate of getCommonVisualStudioPaths()) {
+    if (await fileExists(candidate)) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
+async function resolveFromPath(): Promise<string | undefined> {
   try {
     const { stdout } = await execFile(
-      vswherePath,
-      ["-latest", "-products", "*", "-find", "Common7\\IDE\\devenv.exe"],
+      "where.exe",
+      ["devenv.exe"],
       { windowsHide: true }
     );
     const detectedPath = stdout.split(/\r?\n/).find((line) => line.trim().length > 0)?.trim();
-    if (detectedPath) {
+    if (detectedPath && await fileExists(detectedPath)) {
       return detectedPath;
     }
   } catch {
-    // Fall back to PATH lookup below.
+    return undefined;
   }
 
-  return "devenv.exe";
+  return undefined;
+}
+
+function getCommonVisualStudioPaths(): string[] {
+  const programFiles = process.env.ProgramFiles ?? "C:\\Program Files";
+  const programFilesX86 = process.env["ProgramFiles(x86)"] ?? "C:\\Program Files (x86)";
+  const editions = ["Enterprise", "Professional", "Community", "BuildTools"];
+  const years = ["2026", "2022", "2019", "2017"];
+  const roots = [
+    path.join(programFiles, "Microsoft Visual Studio"),
+    path.join(programFilesX86, "Microsoft Visual Studio")
+  ];
+
+  return roots.flatMap((root) =>
+    years.flatMap((year) =>
+      editions.map((edition) => path.join(root, year, edition, "Common7", "IDE", "devenv.exe"))
+    )
+  );
+}
+
+async function fileExists(file: string): Promise<boolean> {
+  try {
+    await access(file, fs.constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
 }

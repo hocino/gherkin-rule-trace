@@ -231,11 +231,6 @@
           "default": true,
           "description": "Open .cs implementation/test links in an already running Visual Studio instance when possible. Falls back to VS Code."
         },
-        "ruleTrace.visualStudioPath": {
-          "type": "string",
-          "default": "",
-          "description": "Optional path to devenv.exe. Leave empty to auto-detect Visual Studio with vswhere or PATH."
-        },
         "ruleTrace.stepGenerationLanguage": {
           "type": "string",
           "default": "auto",

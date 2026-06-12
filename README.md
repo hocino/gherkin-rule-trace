@@ -136,11 +136,30 @@ Scan behavior can also be tuned:
 "ruleTrace.autoScan": true,
 "ruleTrace.maxFileSizeKb": 1024,
 "ruleTrace.openCsFilesInVisualStudio": true,
-"ruleTrace.visualStudioPath": "",
 "ruleTrace.stepGenerationLanguage": "auto"
 ```
 
-When `ruleTrace.openCsFilesInVisualStudio` is enabled on Windows, links to `.cs` files are opened in an already running Visual Studio instance when possible. If Visual Studio is not running or cannot be found, the file opens normally in VS Code. Set `ruleTrace.visualStudioPath` if `devenv.exe` cannot be auto-detected.
+When `ruleTrace.openCsFilesInVisualStudio` is enabled on Windows, links to `.cs` files are opened in an already running Visual Studio instance when possible. If Visual Studio is not running or `devenv.exe` cannot be found, the file opens normally in VS Code.
+
+If `.cs` links do not open in Visual Studio, make sure the folder containing `devenv.exe` is available in the user `PATH`. Run PowerShell as the current user and adapt the Visual Studio edition if needed:
+
+```powershell
+$devenvDir = "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE"
+$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if (($currentPath -split ";") -notcontains $devenvDir) {
+  [Environment]::SetEnvironmentVariable("Path", "$currentPath;$devenvDir", "User")
+}
+```
+
+Common Visual Studio editions use one of these folders:
+
+```text
+C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE
+C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE
+C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE
+```
+
+After changing the `PATH`, restart VS Code so the extension receives the updated environment.
 
 Implementation matches are classified as backend or frontend with configurable path patterns:
 

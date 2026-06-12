@@ -47,6 +47,7 @@ function isLinkedFile(trace: RuleTrace, file: string): boolean {
   return (
     trace.implementations.some((match) => match.file === file) ||
     trace.tests.describeMatches.some((match) => match.file === file) ||
+    trace.tests.tagMatches.some((match) => match.file === file) ||
     trace.tests.stepMatches.some((match) => match.file === file)
   );
 }

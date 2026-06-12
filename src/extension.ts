@@ -4,6 +4,7 @@ import { RuleCodeLensProvider } from "./codelens/ruleCodeLensProvider";
 import { RuleStatusDecorator } from "./codelens/ruleStatusDecorator";
 import { openFileAtLine } from "./navigation/openFile";
 import { RuleDocumentLinkProvider } from "./navigation/ruleDocumentLinkProvider";
+import { RuleDocumentSymbolProvider } from "./navigation/ruleDocumentSymbolProvider";
 import { generateAllSteps, generateMissingSteps } from "./scanner/missingStepGenerator";
 import { WorkspaceScanner } from "./scanner/workspaceScanner";
 import { RuleDetailsWebview } from "./views/ruleDetailsWebview";
@@ -18,6 +19,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const detailsWebview = new RuleDetailsWebview(context.extensionUri);
   const codeLensProvider = new RuleCodeLensProvider();
   const documentLinkProvider = new RuleDocumentLinkProvider();
+  const documentSymbolProvider = new RuleDocumentSymbolProvider();
   const statusDecorator = new RuleStatusDecorator(context);
 
   context.subscriptions.push(
@@ -25,6 +27,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerTreeDataProvider("ruleTraceView", treeProvider),
     vscode.languages.registerCodeLensProvider({ pattern: "**/*.feature" }, codeLensProvider),
     vscode.languages.registerDocumentLinkProvider({ scheme: "file" }, documentLinkProvider),
+    vscode.languages.registerDocumentSymbolProvider({ language: "feature", scheme: "file" }, documentSymbolProvider),
     vscode.commands.registerCommand("ruleTrace.refresh", async () => {
       const currentTrace = detailsWebview.getCurrentTrace();
       await refresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider);
