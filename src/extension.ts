@@ -3,7 +3,8 @@ import { RuleTrace, RuleTraceNode, WorkspaceScanResult } from "./model/types";
 import { RuleCodeLensProvider } from "./codelens/ruleCodeLensProvider";
 import { RuleStatusDecorator } from "./codelens/ruleStatusDecorator";
 import { openFileAtLine } from "./navigation/openFile";
-import { generateMissingSteps } from "./scanner/missingStepGenerator";
+import { RuleDocumentLinkProvider } from "./navigation/ruleDocumentLinkProvider";
+import { generateAllSteps, generateMissingSteps } from "./scanner/missingStepGenerator";
 import { WorkspaceScanner } from "./scanner/workspaceScanner";
 import { RuleDetailsWebview } from "./views/ruleDetailsWebview";
 import { RuleTraceTreeProvider } from "./views/ruleTraceTreeProvider";
@@ -16,15 +17,17 @@ export function activate(context: vscode.ExtensionContext): void {
   const treeProvider = new RuleTraceTreeProvider();
   const detailsWebview = new RuleDetailsWebview(context.extensionUri);
   const codeLensProvider = new RuleCodeLensProvider();
+  const documentLinkProvider = new RuleDocumentLinkProvider();
   const statusDecorator = new RuleStatusDecorator(context);
 
   context.subscriptions.push(
     statusDecorator,
     vscode.window.registerTreeDataProvider("ruleTraceView", treeProvider),
     vscode.languages.registerCodeLensProvider({ pattern: "**/*.feature" }, codeLensProvider),
+    vscode.languages.registerDocumentLinkProvider({ scheme: "file" }, documentLinkProvider),
     vscode.commands.registerCommand("ruleTrace.refresh", async () => {
       const currentTrace = detailsWebview.getCurrentTrace();
-      await refresh(scanner, treeProvider, codeLensProvider, statusDecorator);
+      await refresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider);
       await revealRefreshedRule(currentTrace, detailsWebview);
     }),
     vscode.commands.registerCommand("ruleTrace.openRuleFeature", async (trace?: RuleTrace | RuleTraceNode) => {
@@ -76,7 +79,18 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       await generateMissingSteps(resolved);
-      await refresh(scanner, treeProvider, codeLensProvider, statusDecorator);
+      await refresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider);
+      await refreshDetailsIfCurrentRule(resolved, detailsWebview);
+    }),
+    vscode.commands.registerCommand("ruleTrace.generateAllSteps", async (trace?: RuleTrace | RuleTraceNode) => {
+      const resolved = resolveTrace(trace);
+      if (!resolved) {
+        vscode.window.showInformationMessage("No rule selected.");
+        return;
+      }
+
+      await generateAllSteps(resolved);
+      await refresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider);
       await refreshDetailsIfCurrentRule(resolved, detailsWebview);
     }),
     vscode.commands.registerCommand("ruleTrace.copyRuleTag", async (trace?: RuleTrace | RuleTraceNode) => {
@@ -92,24 +106,24 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand("ruleTrace.refreshRule", async (trace?: RuleTrace | RuleTraceNode) => {
       const resolved = resolveTrace(trace) ?? detailsWebview.getCurrentTrace();
-      await refresh(scanner, treeProvider, codeLensProvider, statusDecorator);
+      await refresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider);
       await revealRefreshedRule(resolved, detailsWebview);
     })
   );
 
-  refresh(scanner, treeProvider, codeLensProvider, statusDecorator);
+  refresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider);
 
   const featureWatcher = vscode.workspace.createFileSystemWatcher("**/*.feature");
   const codeWatcher = vscode.workspace.createFileSystemWatcher("**/*.{ts,tsx,js,jsx,mts,cts,py,cs,java,go,rs,php,rb,html}");
   context.subscriptions.push(
     featureWatcher,
     codeWatcher,
-    featureWatcher.onDidCreate((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, uri, false)),
-    featureWatcher.onDidChange((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, uri, false)),
-    featureWatcher.onDidDelete((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, uri, true)),
-    codeWatcher.onDidCreate((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, uri, false)),
-    codeWatcher.onDidChange((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, uri, false)),
-    codeWatcher.onDidDelete((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, uri, true))
+    featureWatcher.onDidCreate((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider, uri, false)),
+    featureWatcher.onDidChange((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider, uri, false)),
+    featureWatcher.onDidDelete((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider, uri, true)),
+    codeWatcher.onDidCreate((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider, uri, false)),
+    codeWatcher.onDidChange((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider, uri, false)),
+    codeWatcher.onDidDelete((uri) => scheduleFileRefresh(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider, uri, true))
   );
 }
 
@@ -119,7 +133,8 @@ async function refresh(
   scanner: WorkspaceScanner,
   treeProvider: RuleTraceTreeProvider,
   codeLensProvider: RuleCodeLensProvider,
-  statusDecorator: RuleStatusDecorator
+  statusDecorator: RuleStatusDecorator,
+  documentLinkProvider: RuleDocumentLinkProvider
 ): Promise<WorkspaceScanResult> {
   return vscode.window.withProgress(
     {
@@ -128,7 +143,7 @@ async function refresh(
     },
     async () => {
       const result = await scanner.scan();
-      applyScanResult(result, treeProvider, codeLensProvider, statusDecorator);
+      applyScanResult(result, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider);
       showScanStats(result);
       return result;
     }
@@ -140,10 +155,11 @@ async function refreshFile(
   treeProvider: RuleTraceTreeProvider,
   codeLensProvider: RuleCodeLensProvider,
   statusDecorator: RuleStatusDecorator,
+  documentLinkProvider: RuleDocumentLinkProvider,
   uri: vscode.Uri
 ): Promise<void> {
   const result = await scanner.updateFile(uri);
-  applyScanResult(result, treeProvider, codeLensProvider, statusDecorator);
+  applyScanResult(result, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider);
   showScanStats(result);
 }
 
@@ -152,6 +168,7 @@ function scheduleFileRefresh(
   treeProvider: RuleTraceTreeProvider,
   codeLensProvider: RuleCodeLensProvider,
   statusDecorator: RuleStatusDecorator,
+  documentLinkProvider: RuleDocumentLinkProvider,
   uri: vscode.Uri,
   deleted: boolean
 ): void {
@@ -170,9 +187,9 @@ function scheduleFileRefresh(
     setTimeout(async () => {
       pendingFileRefreshes.delete(key);
       if (deleted) {
-        await deleteFile(scanner, treeProvider, codeLensProvider, statusDecorator, uri);
+        await deleteFile(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider, uri);
       } else {
-        await refreshFile(scanner, treeProvider, codeLensProvider, statusDecorator, uri);
+        await refreshFile(scanner, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider, uri);
       }
     }, 150)
   );
@@ -183,10 +200,11 @@ async function deleteFile(
   treeProvider: RuleTraceTreeProvider,
   codeLensProvider: RuleCodeLensProvider,
   statusDecorator: RuleStatusDecorator,
+  documentLinkProvider: RuleDocumentLinkProvider,
   uri: vscode.Uri
 ): Promise<void> {
   const result = await scanner.deleteFile(uri);
-  applyScanResult(result, treeProvider, codeLensProvider, statusDecorator);
+  applyScanResult(result, treeProvider, codeLensProvider, statusDecorator, documentLinkProvider);
   showScanStats(result);
 }
 
@@ -194,12 +212,14 @@ function applyScanResult(
   result: WorkspaceScanResult,
   treeProvider: RuleTraceTreeProvider,
   codeLensProvider: RuleCodeLensProvider,
-  statusDecorator: RuleStatusDecorator
+  statusDecorator: RuleStatusDecorator,
+  documentLinkProvider: RuleDocumentLinkProvider
 ): void {
   latestTraces = new Map(result.rules.map((trace) => [trace.rule.id, trace]));
   treeProvider.update(result);
   codeLensProvider.update(result);
   statusDecorator.update(result);
+  documentLinkProvider.update(result);
 }
 
 function showScanStats(result: WorkspaceScanResult): void {

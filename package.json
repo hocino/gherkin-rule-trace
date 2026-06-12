@@ -19,6 +19,7 @@
     "onCommand:ruleTrace.openImplementation",
     "onCommand:ruleTrace.openTest",
     "onCommand:ruleTrace.generateMissingSteps",
+    "onCommand:ruleTrace.generateAllSteps",
     "onCommand:ruleTrace.copyRuleTag",
     "onCommand:ruleTrace.refreshRule",
     "onCommand:ruleTrace.openRuleFeature"
@@ -89,6 +90,10 @@
       {
         "command": "ruleTrace.generateMissingSteps",
         "title": "Gherkin Rule Trace: Generate Missing Steps"
+      },
+      {
+        "command": "ruleTrace.generateAllSteps",
+        "title": "Gherkin Rule Trace: Generate Steps"
       },
       {
         "command": "ruleTrace.copyRuleTag",
@@ -230,6 +235,18 @@
           "type": "string",
           "default": "",
           "description": "Optional path to devenv.exe. Leave empty to auto-detect Visual Studio with vswhere or PATH."
+        },
+        "ruleTrace.stepGenerationLanguage": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "typescript",
+            "javascript",
+            "csharp",
+            "python"
+          ],
+          "description": "Language used when generating step definitions. Auto uses an existing step file extension or the dominant workspace technology."
         }
       }
     },
@@ -259,6 +276,11 @@
         },
         {
           "command": "ruleTrace.generateMissingSteps",
+          "when": "view == ruleTraceView && viewItem == rule",
+          "group": "navigation"
+        },
+        {
+          "command": "ruleTrace.generateAllSteps",
           "when": "view == ruleTraceView && viewItem == rule",
           "group": "navigation"
         }

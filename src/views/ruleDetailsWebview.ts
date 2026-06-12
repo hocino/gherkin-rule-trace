@@ -57,6 +57,11 @@ export class RuleDetailsWebview {
       return;
     }
 
+    if (message.command === "generateAllSteps" && this.currentTrace) {
+      await vscode.commands.executeCommand("ruleTrace.generateAllSteps", this.currentTrace);
+      return;
+    }
+
     if (message.command === "refreshRule" && this.currentTrace) {
       await vscode.commands.executeCommand("ruleTrace.refreshRule", this.currentTrace);
     }
@@ -65,7 +70,7 @@ export class RuleDetailsWebview {
   private render(trace: RuleTrace): string {
     const nonce = getNonce();
     const ruleComment = `// ${trace.rule.name}`;
-    const stepButtonLabel = trace.tests.missingSteps.length > 0 ? "Generate missing steps" : "Open first step";
+    const stepButtonLabel = trace.tests.missingSteps.length > 0 ? "Generate missing step" : "Open first step";
     const featureLink = renderFileButton(trace.rule.featureFile, trace.rule.line);
     const implementationSummary = summarizeImplementations(trace);
     const implementationItems = renderImplementationSection(trace);
@@ -222,6 +227,7 @@ export class RuleDetailsWebview {
         <div class="actions">
           <button data-command="copy" data-text="${escapeAttribute(ruleComment)}">Copy rule tag</button>
           <button data-command="generateMissingSteps">${escapeHtml(stepButtonLabel)}</button>
+          <button data-command="generateAllSteps">Generate steps</button>
           <button data-command="refreshRule">Refresh</button>
         </div>
 

@@ -30,9 +30,7 @@ export class RuleCodeLensProvider implements vscode.CodeLensProvider {
       const testedIcon = trace?.tests.tested ? "$(check)" : "$(error)";
       const tested = trace?.tests.tested ? "Yes" : "No";
       const range = new vscode.Range(rule.line - 1, 0, rule.line - 1, 0);
-      const stepActionTitle = resolvedTrace.tests.missingSteps.length > 0
-        ? "$(wand) Generate missing steps"
-        : "$(go-to-file) Open first step";
+      const hasMissingSteps = resolvedTrace.tests.missingSteps.length > 0;
 
       return [
         new vscode.CodeLens(range, {
@@ -47,7 +45,12 @@ export class RuleCodeLensProvider implements vscode.CodeLensProvider {
         }),
         new vscode.CodeLens(range, {
           command: "ruleTrace.generateMissingSteps",
-          title: stepActionTitle,
+          title: hasMissingSteps ? "$(wand) Generate missing step" : "$(go-to-file) Open first step",
+          arguments: [resolvedTrace]
+        }),
+        new vscode.CodeLens(range, {
+          command: "ruleTrace.generateAllSteps",
+          title: "$(new-file) Generate steps",
           arguments: [resolvedTrace]
         }),
         new vscode.CodeLens(range, {

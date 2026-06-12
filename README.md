@@ -136,7 +136,8 @@ Scan behavior can also be tuned:
 "ruleTrace.autoScan": true,
 "ruleTrace.maxFileSizeKb": 1024,
 "ruleTrace.openCsFilesInVisualStudio": true,
-"ruleTrace.visualStudioPath": ""
+"ruleTrace.visualStudioPath": "",
+"ruleTrace.stepGenerationLanguage": "auto"
 ```
 
 When `ruleTrace.openCsFilesInVisualStudio` is enabled on Windows, links to `.cs` files are opened in an already running Visual Studio instance when possible. If Visual Studio is not running or cannot be found, the file opens normally in VS Code. Set `ruleTrace.visualStudioPath` if `devenv.exe` cannot be auto-detected.
@@ -203,6 +204,8 @@ HTML template comments are supported too:
 <!-- #010 A vigilance certificate must be valid -->
 <app-certificate-banner></app-certificate-banner>
 ```
+
+When a scanned implementation or test file contains the exact rule name, the rule text becomes a clickable document link that opens the matching `.feature` file at the `Rule:` line.
 
 Test files are excluded from implementation detection. A file is treated as a test file when its path contains `.test.`, `.spec.`, or a folder named `test`, `tests`, `__tests__`, `bdd`, or `e2e`.
 
@@ -272,11 +275,25 @@ The details panel contains clickable file links, buttons to copy the exact rule 
 Each `Rule:` line in a `.feature` file gets a CodeLens:
 
 ```text
-✓ Back: 1 | Front: 1 | ✓ Tested: Yes | Copy tag | Open first step | Refresh rule
+✓ Back: 1 | Front: 1 | ✓ Tested: Yes | Copy tag | Open first step | Generate steps | Refresh rule
 Rule: #010 A vigilance certificate must be valid
 ```
 
-The status opens rule details. `Copy tag` copies `// ` followed by the exact text after `Rule:`, `Generate missing steps` writes missing TypeScript/Cucumber step definitions without adding a rule comment above them and jumps to the first generated step, and `Refresh rule` refreshes the scan while staying on the rule.
+The status opens rule details. `Copy tag` copies `// ` followed by the exact text after `Rule:`. `Open first step` is shown when every step is already present. `Generate missing step` is shown when at least one step is missing and writes only missing TypeScript/Cucumber step definitions. `Generate steps` always generates every Gherkin step for the rule. Generated snippets do not add a rule comment above them and jump to the first generated step. `Refresh rule` refreshes the scan while staying on the rule.
+
+Step generation supports multiple technologies. Configure it with:
+
+```json
+"ruleTrace.stepGenerationLanguage": "auto"
+```
+
+Allowed values are `auto`, `typescript`, `javascript`, `csharp`, and `python`.
+
+In `auto` mode, the extension uses an existing step definition file when one is found. Otherwise it detects the workspace technology and generates:
+
+- TypeScript/JavaScript Cucumber steps with `Given(...)`, `When(...)`, `Then(...)`;
+- C# SpecFlow/Reqnroll steps with `[Given(...)]`, `[When(...)]`, `[Then(...)]`;
+- Python Behave-style steps with `@given(...)`, `@when(...)`, `@then(...)`.
 
 Rule lines also get a colored inline decoration for quick visual scanning.
 
