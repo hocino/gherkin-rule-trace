@@ -100,7 +100,7 @@ export function activate(context: vscode.ExtensionContext): void {
   refresh(scanner, treeProvider, codeLensProvider, statusDecorator);
 
   const featureWatcher = vscode.workspace.createFileSystemWatcher("**/*.feature");
-  const codeWatcher = vscode.workspace.createFileSystemWatcher("**/*.{ts,tsx,js,jsx,mts,cts,py,cs,java,go,rs,php,rb}");
+  const codeWatcher = vscode.workspace.createFileSystemWatcher("**/*.{ts,tsx,js,jsx,mts,cts,py,cs,java,go,rs,php,rb,html}");
   context.subscriptions.push(
     featureWatcher,
     codeWatcher,

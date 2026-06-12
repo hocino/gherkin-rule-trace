@@ -103,16 +103,43 @@ Code extensions scanned for implementation and tests:
   ".go",
   ".rs",
   ".php",
-  ".rb"
+  ".rb",
+  ".html"
 ]
 ```
+
+Test files are excluded from implementation detection and used for test detection only. Their patterns are configurable:
+
+```json
+"ruleTrace.testFilePatterns": [
+  "**/*.test.*",
+  "**/*.spec.*",
+  "**/*test.*",
+  "**/*tests.*",
+  "**/*_test.*",
+  "**/*_tests.*",
+  "**/*-test.*",
+  "**/*-tests.*",
+  "**/test/**",
+  "**/tests/**",
+  "**/__tests__/**",
+  "**/bdd/**",
+  "**/e2e/**"
+]
+```
+
+This covers common names such as `SupplierTest.cs`, `supplier_test.py`, `validateCertificate.test.ts`, and `test.ts`.
 
 Scan behavior can also be tuned:
 
 ```json
 "ruleTrace.autoScan": true,
-"ruleTrace.maxFileSizeKb": 1024
+"ruleTrace.maxFileSizeKb": 1024,
+"ruleTrace.openCsFilesInVisualStudio": true,
+"ruleTrace.visualStudioPath": ""
 ```
+
+When `ruleTrace.openCsFilesInVisualStudio` is enabled on Windows, links to `.cs` files are opened in an already running Visual Studio instance when possible. If Visual Studio is not running or cannot be found, the file opens normally in VS Code. Set `ruleTrace.visualStudioPath` if `devenv.exe` cannot be auto-detected.
 
 Implementation matches are classified as backend or frontend with configurable path patterns:
 
@@ -137,7 +164,8 @@ Implementation matches are classified as backend or frontend with configurable p
   "**/ui/**",
   "**/components/**",
   "**/*.tsx",
-  "**/*.jsx"
+  "**/*.jsx",
+  "**/*.html"
 ]
 ```
 
@@ -167,6 +195,13 @@ Block comments are also supported:
 export function validateCertificate(expiresAt: Date): boolean {
   return expiresAt.getTime() > Date.now();
 }
+```
+
+HTML template comments are supported too:
+
+```html
+<!-- #010 A vigilance certificate must be valid -->
+<app-certificate-banner></app-certificate-banner>
 ```
 
 Test files are excluded from implementation detection. A file is treated as a test file when its path contains `.test.`, `.spec.`, or a folder named `test`, `tests`, `__tests__`, `bdd`, or `e2e`.

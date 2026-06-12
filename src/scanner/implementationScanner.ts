@@ -37,11 +37,11 @@ export function scanImplementationFile(
 ): IndexedImplementationMatch[] {
   const matches: IndexedImplementationMatch[] = [];
   const lines = file.content.split(/\r?\n/);
-  let inBlockComment = false;
+  let blockCommentEnd: string | undefined;
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    const commentLine = looksLikeCommentLine(line, inBlockComment);
-    inBlockComment = updateBlockCommentState(line, inBlockComment);
+    const commentLine = looksLikeCommentLine(line, blockCommentEnd !== undefined);
+    blockCommentEnd = updateBlockCommentState(line, blockCommentEnd);
 
     if (!commentLine) {
       continue;
@@ -74,25 +74,34 @@ function looksLikeCommentLine(line: string, inBlockComment: boolean): boolean {
     trimmed.startsWith("#") ||
     trimmed.startsWith("*") ||
     trimmed.startsWith("/*") ||
-    trimmed.startsWith("/**")
+    trimmed.startsWith("/**") ||
+    trimmed.startsWith("<!--")
   ) {
     return true;
   }
 
-  if (trimmed.includes("//") || trimmed.includes("#") || trimmed.includes("/*")) {
+  if (trimmed.includes("//") || trimmed.includes("#") || trimmed.includes("/*") || trimmed.includes("<!--")) {
     return true;
   }
 
   return false;
 }
 
-function updateBlockCommentState(line: string, inBlockComment: boolean): boolean {
-  const blockStart = line.indexOf("/*");
-  const blockEnd = line.indexOf("*/");
-
-  if (inBlockComment) {
-    return blockEnd === -1;
+function updateBlockCommentState(line: string, activeEndToken: string | undefined): string | undefined {
+  if (activeEndToken) {
+    return line.includes(activeEndToken) ? undefined : activeEndToken;
   }
 
-  return blockStart !== -1 && (blockEnd === -1 || blockStart < blockEnd);
+  const starts = [
+    { start: line.indexOf("/*"), endToken: "*/" },
+    { start: line.indexOf("<!--"), endToken: "-->" }
+  ].filter((candidate) => candidate.start >= 0);
+
+  const firstStart = starts.sort((a, b) => a.start - b.start)[0];
+  if (!firstStart) {
+    return undefined;
+  }
+
+  const end = line.indexOf(firstStart.endToken, firstStart.start + 1);
+  return end === -1 ? firstStart.endToken : undefined;
 }

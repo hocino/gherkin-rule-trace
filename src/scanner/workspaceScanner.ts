@@ -25,6 +25,7 @@ interface ScannerConfig {
   codeExtensionSet: Set<string>;
   frontendPatterns: string[];
   backendPatterns: string[];
+  testFilePatterns: string[];
   autoScan: boolean;
   maxFileSizeKb: number;
 }
@@ -147,7 +148,7 @@ export class WorkspaceScanner {
   }
 
   private scanCodeTextFile(file: TextFile): void {
-    if (isTestFile(file.file)) {
+    if (isTestFile(file.file, this.config.testFilePatterns)) {
       this.implementationMatchesByFile.delete(file.file);
       const scan = scanTestFile(file, this.ruleIndex);
       this.describeMatchesByFile.set(file.file, scan.describeMatches);
@@ -275,7 +276,8 @@ export class WorkspaceScanner {
       ".go",
       ".rs",
       ".php",
-      ".rb"
+      ".rb",
+      ".html"
     ]);
     const frontendPatterns = config.get<string[]>("frontendPatterns", [
       "**/frontend/**",
@@ -285,7 +287,8 @@ export class WorkspaceScanner {
       "**/ui/**",
       "**/components/**",
       "**/*.tsx",
-      "**/*.jsx"
+      "**/*.jsx",
+      "**/*.html"
     ]);
     const backendPatterns = config.get<string[]>("backendPatterns", [
       "**/backend/**",
@@ -301,6 +304,21 @@ export class WorkspaceScanner {
       "**/*.rs",
       "**/*.py"
     ]);
+    const testFilePatterns = config.get<string[]>("testFilePatterns", [
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/*test.*",
+      "**/*tests.*",
+      "**/*_test.*",
+      "**/*_tests.*",
+      "**/*-test.*",
+      "**/*-tests.*",
+      "**/test/**",
+      "**/tests/**",
+      "**/__tests__/**",
+      "**/bdd/**",
+      "**/e2e/**"
+    ]);
     const autoScan = config.get<boolean>("autoScan", true);
     const maxFileSizeKb = config.get<number>("maxFileSizeKb", 1024);
 
@@ -311,6 +329,7 @@ export class WorkspaceScanner {
       codeExtensionSet: new Set(codeExtensions.map((extension) => extension.toLowerCase())),
       frontendPatterns,
       backendPatterns,
+      testFilePatterns,
       autoScan,
       maxFileSizeKb
     };

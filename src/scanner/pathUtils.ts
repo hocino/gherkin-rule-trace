@@ -19,14 +19,30 @@ export function getWorkspaceFolderLabel(filePath: string): string | undefined {
   return workspaceFolder?.name;
 }
 
-export function isTestFile(filePath: string): boolean {
+export function isTestFile(filePath: string, extraPatterns: string[] = []): boolean {
   const normalized = normalizeFsPath(filePath).toLowerCase();
   const baseName = path.basename(normalized);
+  const extension = path.extname(baseName);
+  const stem = extension ? baseName.slice(0, -extension.length) : baseName;
   const segments = normalized.split("/");
 
   return (
+    matchesAnyGlob(filePath, extraPatterns) ||
     baseName.includes(".test.") ||
     baseName.includes(".spec.") ||
+    stem === "test" ||
+    stem === "tests" ||
+    stem.startsWith("test-") ||
+    stem.startsWith("test_") ||
+    stem.endsWith("test") ||
+    stem.endsWith("-test") ||
+    stem.endsWith("_test") ||
+    stem.endsWith("tests") ||
+    stem.endsWith("-tests") ||
+    stem.endsWith("_tests") ||
+    stem.endsWith("spec") ||
+    stem.endsWith("-spec") ||
+    stem.endsWith("_spec") ||
     segments.includes("test") ||
     segments.includes("tests") ||
     segments.includes("__tests__") ||

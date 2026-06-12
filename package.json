@@ -141,7 +141,8 @@
             ".go",
             ".rs",
             ".php",
-            ".rb"
+            ".rb",
+            ".html"
           ],
           "items": {
             "type": "string"
@@ -158,7 +159,8 @@
             "**/ui/**",
             "**/components/**",
             "**/*.tsx",
-            "**/*.jsx"
+            "**/*.jsx",
+            "**/*.html"
           ],
           "items": {
             "type": "string"
@@ -186,6 +188,28 @@
           },
           "description": "Glob-like path patterns used to classify implementation matches as backend."
         },
+        "ruleTrace.testFilePatterns": {
+          "type": "array",
+          "default": [
+            "**/*.test.*",
+            "**/*.spec.*",
+            "**/*test.*",
+            "**/*tests.*",
+            "**/*_test.*",
+            "**/*_tests.*",
+            "**/*-test.*",
+            "**/*-tests.*",
+            "**/test/**",
+            "**/tests/**",
+            "**/__tests__/**",
+            "**/bdd/**",
+            "**/e2e/**"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob-like path patterns used to classify files as tests. Test files are excluded from implementation detection and used only for test detection."
+        },
         "ruleTrace.autoScan": {
           "type": "boolean",
           "default": true,
@@ -196,6 +220,16 @@
           "default": 1024,
           "minimum": 1,
           "description": "Maximum file size in KB scanned by Gherkin Rule Trace. Larger files are skipped."
+        },
+        "ruleTrace.openCsFilesInVisualStudio": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open .cs implementation/test links in an already running Visual Studio instance when possible. Falls back to VS Code."
+        },
+        "ruleTrace.visualStudioPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional path to devenv.exe. Leave empty to auto-detect Visual Studio with vswhere or PATH."
         }
       }
     },
