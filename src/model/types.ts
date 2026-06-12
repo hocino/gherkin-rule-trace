@@ -34,8 +34,9 @@ export interface RuleImplementationMatch {
 
 export interface RuleTestMatch {
   tested: boolean;
-  reason: "describe" | "steps" | "none";
+  reason: "describe" | "tag" | "steps" | "none";
   describeMatches: Array<{ file: string; line: number; preview: string }>;
+  tagMatches: Array<{ file: string; line: number; preview: string }>;
   stepMatches: Array<{ step: string; file: string; line: number; preview: string }>;
   missingSteps: string[];
 }

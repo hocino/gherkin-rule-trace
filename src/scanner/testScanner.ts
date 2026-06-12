@@ -20,8 +20,16 @@ export interface DescribeMatch {
   preview: string;
 }
 
+export interface RuleTagMatch {
+  ruleId: string;
+  file: string;
+  line: number;
+  preview: string;
+}
+
 export interface IndexedTestScan {
   describeMatches: DescribeMatch[];
+  tagMatches: RuleTagMatch[];
   stepDefinitions: StepDefinitionMatch[];
 }
 
@@ -37,11 +45,13 @@ const dotnetStepRegex = /\[(Given|When|Then|And|But|StepDefinition)\s*\(\s*(["']
 
 export function findTestMatches(rules: FeatureRule[], files: TestFile[]): Map<string, RuleTestMatch> {
   const describeMatchesByRule = new Map<string, RuleTestMatch["describeMatches"]>();
+  const tagMatchesByRule = new Map<string, RuleTestMatch["tagMatches"]>();
   const stepDefinitionsByStep = new Map<string, StepDefinitionMatch[]>();
   const ruleIndex = createRuleSearchIndex(rules);
 
   for (const rule of rules) {
     describeMatchesByRule.set(rule.id, []);
+    tagMatchesByRule.set(rule.id, []);
   }
 
   for (const file of files) {
@@ -51,6 +61,13 @@ export function findTestMatches(rules: FeatureRule[], files: TestFile[]): Map<st
         file: describeMatch.file,
         line: describeMatch.line,
         preview: describeMatch.preview
+      });
+    }
+    for (const tagMatch of scan.tagMatches) {
+      tagMatchesByRule.get(tagMatch.ruleId)?.push({
+        file: tagMatch.file,
+        line: tagMatch.line,
+        preview: tagMatch.preview
       });
     }
 
@@ -65,17 +82,19 @@ export function findTestMatches(rules: FeatureRule[], files: TestFile[]): Map<st
   const result = new Map<string, RuleTestMatch>();
   for (const rule of rules) {
     const describeMatches = describeMatchesByRule.get(rule.id) ?? [];
+    const tagMatches = tagMatchesByRule.get(rule.id) ?? [];
     const expectedSteps = Array.from(new Set(rule.steps.map((step) => step.trim()).filter(Boolean)));
     const stepMatches = findRuleStepMatches(expectedSteps, stepDefinitionsByStep);
     const foundSteps = new Set(stepMatches.map((match) => match.step));
     const missingSteps = expectedSteps.filter((step) => !foundSteps.has(step));
     const stepsCovered = expectedSteps.length > 0 && missingSteps.length === 0;
-    const tested = describeMatches.length > 0 || stepsCovered;
+    const tested = describeMatches.length > 0 || tagMatches.length > 0 || stepsCovered;
 
     result.set(rule.id, {
       tested,
-      reason: describeMatches.length > 0 ? "describe" : stepsCovered ? "steps" : "none",
+      reason: describeMatches.length > 0 ? "describe" : tagMatches.length > 0 ? "tag" : stepsCovered ? "steps" : "none",
       describeMatches,
+      tagMatches,
       stepMatches,
       missingSteps
     });
@@ -87,18 +106,31 @@ export function findTestMatches(rules: FeatureRule[], files: TestFile[]): Map<st
 export function buildTestMatches(
   rules: FeatureRule[],
   describeMatchesByFile: Iterable<DescribeMatch[]>,
+  tagMatchesByFile: Iterable<RuleTagMatch[]>,
   stepDefinitionsByFile: Iterable<StepDefinitionMatch[]>
 ): Map<string, RuleTestMatch> {
   const describeMatchesByRule = new Map<string, RuleTestMatch["describeMatches"]>();
+  const tagMatchesByRule = new Map<string, RuleTestMatch["tagMatches"]>();
   const stepDefinitionsByStep = new Map<string, StepDefinitionMatch[]>();
 
   for (const rule of rules) {
     describeMatchesByRule.set(rule.id, []);
+    tagMatchesByRule.set(rule.id, []);
   }
 
   for (const matches of describeMatchesByFile) {
     for (const match of matches) {
       describeMatchesByRule.get(match.ruleId)?.push({
+        file: match.file,
+        line: match.line,
+        preview: match.preview
+      });
+    }
+  }
+
+  for (const matches of tagMatchesByFile) {
+    for (const match of matches) {
+      tagMatchesByRule.get(match.ruleId)?.push({
         file: match.file,
         line: match.line,
         preview: match.preview
@@ -118,17 +150,19 @@ export function buildTestMatches(
   const result = new Map<string, RuleTestMatch>();
   for (const rule of rules) {
     const describeMatches = describeMatchesByRule.get(rule.id) ?? [];
+    const tagMatches = tagMatchesByRule.get(rule.id) ?? [];
     const expectedSteps = Array.from(new Set(rule.steps.map((step) => step.trim()).filter(Boolean)));
     const stepMatches = findRuleStepMatches(expectedSteps, stepDefinitionsByStep);
     const foundSteps = new Set(stepMatches.map((match) => match.step));
     const missingSteps = expectedSteps.filter((step) => !foundSteps.has(step));
     const stepsCovered = expectedSteps.length > 0 && missingSteps.length === 0;
-    const tested = describeMatches.length > 0 || stepsCovered;
+    const tested = describeMatches.length > 0 || tagMatches.length > 0 || stepsCovered;
 
     result.set(rule.id, {
       tested,
-      reason: describeMatches.length > 0 ? "describe" : stepsCovered ? "steps" : "none",
+      reason: describeMatches.length > 0 ? "describe" : tagMatches.length > 0 ? "tag" : stepsCovered ? "steps" : "none",
       describeMatches,
+      tagMatches,
       stepMatches,
       missingSteps
     });
@@ -155,8 +189,28 @@ export function scanTestFile(file: TestFile, ruleIndex: ReturnType<typeof create
 
   return {
     describeMatches,
+    tagMatches: findRuleTagMatches(indexedFile, ruleIndex),
     stepDefinitions: findStepDefinitions(indexedFile)
   };
+}
+
+function findRuleTagMatches(file: IndexedTestFile, ruleIndex: ReturnType<typeof createRuleSearchIndex>): RuleTagMatch[] {
+  const matches: RuleTagMatch[] = [];
+  for (let index = 0; index < file.lines.length; index += 1) {
+    const line = file.lines[index];
+    for (const rule of ruleIndex.candidatesForText(line)) {
+      if (line.includes(rule.name)) {
+        matches.push({
+          ruleId: rule.id,
+          file: file.file,
+          line: index + 1,
+          preview: line.trim()
+        });
+      }
+    }
+  }
+
+  return uniqueBy(matches, (match) => `${match.ruleId}:${match.file}:${match.line}`);
 }
 
 function indexTestFile(file: TestFile): IndexedTestFile {

@@ -78,11 +78,24 @@ export class RuleDetailsWebview {
     const testSummary =
       trace.tests.tested && trace.tests.reason === "describe"
         ? "Tested by describe"
+        : trace.tests.tested && trace.tests.reason === "tag"
+          ? "Tested by rule tag"
         : trace.tests.tested && trace.tests.reason === "steps"
           ? "Tested by step coverage"
           : "No test found";
 
     const describeItems = trace.tests.describeMatches
+      .map(
+        (match) => `
+          <li>
+            <span class="ok">✓</span>
+            ${renderFileButton(match.file, match.line)}
+            <div class="preview">Preview: ${escapeHtml(match.preview)}</div>
+          </li>`
+      )
+      .join("");
+
+    const tagItems = trace.tests.tagMatches
       .map(
         (match) => `
           <li>
@@ -240,6 +253,7 @@ export class RuleDetailsWebview {
         <h2>Tests</h2>
         <p class="${trace.tests.tested ? "ok" : "bad"}">${escapeHtml(testSummary)}</p>
         ${describeItems ? `<ul>${describeItems}</ul>` : ""}
+        ${tagItems ? `<ul>${tagItems}</ul>` : ""}
 
         <h2>Step coverage</h2>
         <ul>${stepCoverage || "<li>No steps found under this rule</li>"}</ul>

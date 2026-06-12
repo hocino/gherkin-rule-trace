@@ -80,8 +80,13 @@ async function tryOpenCsFileInVisualStudio(file: string, line: number): Promise<
 
 async function isVisualStudioRunning(): Promise<boolean> {
   try {
-    const { stdout } = await execFile("tasklist.exe", ["/FI", "IMAGENAME eq devenv.exe"], { windowsHide: true });
-    return stdout.toLowerCase().includes("devenv.exe");
+    const { stdout } = await execFile("tasklist.exe", ["/FO", "CSV"], { windowsHide: true });
+    const processList = stdout.toLowerCase();
+    return (
+      processList.includes("devenv.exe") ||
+      processList.includes("devhub") ||
+      processList.includes("visualstudio")
+    );
   } catch {
     return false;
   }

@@ -71,6 +71,7 @@ function createFallbackTrace(rule: FeatureRule): RuleTrace {
       tested: false,
       reason: "none",
       describeMatches: [],
+      tagMatches: [],
       stepMatches: [],
       missingSteps: rule.steps
     }

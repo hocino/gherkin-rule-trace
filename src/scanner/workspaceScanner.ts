@@ -5,7 +5,7 @@ import { parseFeatureFile } from "./featureParser";
 import { IndexedImplementationMatch, scanImplementationFile } from "./implementationScanner";
 import { isTestFile, matchesAnyGlob, normalizeFsPath } from "./pathUtils";
 import { createRuleSearchIndex, RuleSearchIndex } from "./ruleSearchIndex";
-import { buildTestMatches, DescribeMatch, scanTestFile, StepDefinitionMatch } from "./testScanner";
+import { buildTestMatches, DescribeMatch, RuleTagMatch, scanTestFile, StepDefinitionMatch } from "./testScanner";
 
 interface TextFile {
   file: string;
@@ -42,6 +42,7 @@ export class WorkspaceScanner {
   private readonly featureRulesByFile = new Map<string, FeatureRule[]>();
   private readonly implementationMatchesByFile = new Map<string, IndexedImplementationMatch[]>();
   private readonly describeMatchesByFile = new Map<string, DescribeMatch[]>();
+  private readonly tagMatchesByFile = new Map<string, RuleTagMatch[]>();
   private readonly stepDefinitionsByFile = new Map<string, StepDefinitionMatch[]>();
   private readonly knownCodeFiles = new Set<string>();
   private config = this.readConfig();
@@ -108,6 +109,7 @@ export class WorkspaceScanner {
     this.fileCache.delete(file);
     this.implementationMatchesByFile.delete(file);
     this.describeMatchesByFile.delete(file);
+    this.tagMatchesByFile.delete(file);
     this.stepDefinitionsByFile.delete(file);
 
     if (hadFeature) {
@@ -141,6 +143,7 @@ export class WorkspaceScanner {
     const files = await this.readFiles(uris, counters);
     this.implementationMatchesByFile.clear();
     this.describeMatchesByFile.clear();
+    this.tagMatchesByFile.clear();
     this.stepDefinitionsByFile.clear();
     for (const file of files) {
       this.scanCodeTextFile(file);
@@ -152,11 +155,13 @@ export class WorkspaceScanner {
       this.implementationMatchesByFile.delete(file.file);
       const scan = scanTestFile(file, this.ruleIndex);
       this.describeMatchesByFile.set(file.file, scan.describeMatches);
+      this.tagMatchesByFile.set(file.file, scan.tagMatches);
       this.stepDefinitionsByFile.set(file.file, scan.stepDefinitions);
       return;
     }
 
     this.describeMatchesByFile.delete(file.file);
+    this.tagMatchesByFile.delete(file.file);
     this.stepDefinitionsByFile.delete(file.file);
     this.implementationMatchesByFile.set(
       file.file,
@@ -178,6 +183,7 @@ export class WorkspaceScanner {
     const tests = buildTestMatches(
       rules,
       this.describeMatchesByFile.values(),
+      this.tagMatchesByFile.values(),
       this.stepDefinitionsByFile.values()
     );
 
@@ -189,6 +195,7 @@ export class WorkspaceScanner {
           tested: false,
           reason: "none",
           describeMatches: [],
+          tagMatches: [],
           stepMatches: [],
           missingSteps: rule.steps
         }
@@ -248,6 +255,7 @@ export class WorkspaceScanner {
     this.featureRulesByFile.clear();
     this.implementationMatchesByFile.clear();
     this.describeMatchesByFile.clear();
+    this.tagMatchesByFile.clear();
     this.stepDefinitionsByFile.clear();
     this.knownCodeFiles.clear();
     this.ruleIndex = createRuleSearchIndex([]);
